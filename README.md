@@ -13,56 +13,92 @@ Only a SHA-256 hash of the input and the matched post URL are committed.
 
 ## Demo subjects
 
-<!-- FILL IN: state clearly that face scans in the demo are of team members' own
-     faces, matched against their own real, publicly-known social accounts (self-consent).
-     This is a deliberate design choice, not a limitation — say so explicitly. -->
+Consent is structurally enforced: `find_match()` (`face_pipeline/search.py`) calls
+`consent_gate.check_consent()` on the extracted face embedding *before* any search runs,
+and raises `ConsentRequiredError` if the face isn't on the allowlist. This has been
+verified by reading the actual function body, not assumed from a docstring.
+
+**Still incomplete**: nobody has registered yet — `registry.json` does not exist in this
+repo. Register a face with `python register_cli.py --name <you> --photo <your_own_consented_photo.jpg>`
+to create it. Once that's done, demo subjects will be team members' own faces, matched
+against their own real, publicly-known social accounts (self-consent) — that is the
+intended design, but as of now it hasn't happened, so don't present it as already true.
 
 ## How to run
 
 ```bash
 git clone <repo_url>
-cd hh_goa_task3
+cd HackerHouse-3
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 
 # Blockchain setup (see blockchain/ for details)
-npm install
+cd blockchain && npm install && cd ..
 
 cp .env.example .env
 # fill in .env with your API keys / RPC URL — see .env.example for what's required
 
-python integration/main.py path/to/face_image.jpg
+python main.py path/to/face_image.jpg
 ```
 
 To run the tamper-evidence demo separately:
 
 ```bash
-python integration/tamper_demo.py
+python tamper_demo.py
 ```
 
 ## Which blockchain
 
-<!-- FILL IN by Person B: e.g. "Polygon Amoy testnet. Contract address: 0x...
-     Fallback: local Hardhat network if testnet RPC is unavailable." -->
+**Polygon Amoy testnet** (chainId 80002), via a Solidity contract (`blockchain/contracts/MatchRegistry.sol`)
+deployed and managed with Hardhat. `registerMatch(bytes32 dataHash, string postUrl)` writes a record
+(reverts with the custom error `AlreadyRegistered` if that exact hash was already registered — records
+can't be silently overwritten); `verifyMatch(bytes32 dataHash)` reads one back.
+
+**Local Hardhat network — confirmed working.** `tamper_demo.py` has been run end-to-end for real
+against a local node (`npm run node` + `npm run deploy:local` inside `blockchain/`): register → verify →
+tamper → re-verify, no stubs involved. Set `BLOCKCHAIN_NETWORK=hardhat_local` in `.env` to use it.
+
+**Amoy testnet — not yet deployed.** No `blockchain/deployments/amoy.json` exists yet. Deploy with
+`npm run deploy:amoy` from `blockchain/` once `RPC_URL` and `PRIVATE_KEY` (a funded Amoy wallet) are
+set in `.env`; the script writes the deployed address + ABI there automatically, and `verify.py` reads
+it with no code changes needed. Set `BLOCKCHAIN_NETWORK=polygon_amoy` in `.env` to point at it once deployed.
 
 ## Architecture
 
-- `face_pipeline/` — face detection/encoding + reverse image search (Person A)
-- `blockchain/` — smart contract + register/verify logic (Person B)
-- `integration/` — orchestrator CLI + tamper-evidence demo (Person C)
-- `artifacts/` — output of pipeline runs, demo recordings
+Flat layout at the repo root, except for `blockchain/`:
+
+- `face_pipeline/` — `__init__.py` (face detection/encoding) + `search.py` (`find_match()` orchestration) (Person A)
+- `reverse_search.py`, `verify_match.py` — reverse image search + real confidence scoring (Person A)
+- `consent_gate.py`, `register_cli.py` — consent allowlist, enforced inside `face_pipeline/search.py` (Person A)
+- `blockchain/` — Solidity contract, Hardhat project, and `verify.py`/`cli.py` register/verify logic (Person B)
+- `main.py`, `tamper_demo.py` — orchestrator CLI + tamper-evidence demo (Person C)
+- `stubs.py` — no longer imported anywhere; kept only as a manual testing fixture
 
 See `INTERFACE_CONTRACT.md` for the exact data shapes each module produces/consumes.
 
 ## Known limitations
 
-<!-- FILL IN before submission. Be honest — judges will find gaps anyway; naming them
-     yourself reads better than getting caught. Likely candidates:
-     - reverse image search API rate limits / coverage gaps
-     - demo restricted to self-consented team member faces, not arbitrary strangers
-     - testnet vs mainnet tradeoffs
-     - face match confidence threshold and false-positive rate -->
+- **web3.py version quirk**: the installed `hexbytes` 2.0.0's `.hex()` drops the `0x`
+  prefix (older versions kept it). `blockchain/verify.py`'s `register_match()` explicitly
+  strips-then-readds it — that line is a compatibility fix for this specific installed
+  version, not dead or redundant code.
+- **Reverse-image-search coverage is uneven by platform.** LinkedIn in particular is a
+  known weak case: profile photos are served from `media.licdn.com` behind mechanisms
+  that resist generic scraping, and Google/Google Lens indexes very little of LinkedIn's
+  photo content tied back to profile pages. Don't expect SerpApi's Google Lens to
+  reliably surface LinkedIn matches even once fully wired up.
+- **`MATCH_CONFIDENCE_THRESHOLD` (0.6, in `face_pipeline/search.py`) is not yet validated**
+  against a labeled set of known-match/known-non-match photo pairs — it's a reasonable
+  starting point for ArcFace cosine similarity, not a tuned number.
+- **No demo subjects registered yet.** `registry.json` doesn't exist; nobody has run
+  `register_cli.py`. `main.py` has not been run against a real face end-to-end for this
+  reason, and also because `SEARCH_API_KEY` is not yet set in `.env`.
+- **Amoy testnet deployment is pending** — see "Which blockchain" above; only the local
+  Hardhat network has been exercised for real so far.
+- **`main.py` only catches `NoMatchFoundError`**, not `ConsentRequiredError` — if
+  `find_match()` is called on a face that isn't on the consent allowlist, `main.py` will
+  currently crash with an unhandled traceback instead of a clean message.
 
 ## Team
 

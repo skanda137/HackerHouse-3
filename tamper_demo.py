@@ -1,6 +1,6 @@
 import hashlib
 
-from stubs import register_match, verify_match
+from blockchain.verify import register_match, verify_match
 
 def hash_content(content: str) -> str:
     return hashlib.sha256(content.encode()).hexdigest()

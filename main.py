@@ -2,7 +2,8 @@ import sys
 import json
 from pathlib import Path
 
-from stubs import find_match, register_match, verify_match, NoMatchFoundError
+from face_pipeline.search import find_match, NoMatchFoundError
+from blockchain.verify import register_match, verify_match
 
 def run_pipeline(image_path: str) -> dict:
     if not Path(image_path).exists():

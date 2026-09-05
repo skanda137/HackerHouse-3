@@ -8,7 +8,7 @@ then uses the returned image_id with Google Lens.
 import os
 import requests
 
-SERPAPI_KEY = os.environ.get("SERPAPI_KEY")
+SERPAPI_KEY = os.environ.get("SEARCH_API_KEY")  # name matches .env/.env.example, not "SERPAPI_KEY"
 
 SERPAPI_SEARCH_URL = "https://serpapi.com/search"
 SERPAPI_IMAGE_URL = "https://serpapi.com/image"
