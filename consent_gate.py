@@ -22,6 +22,12 @@ REGISTRY_PATH = os.path.join(os.path.dirname(__file__), "registry.json")
 MATCH_THRESHOLD = 0.45  # cosine similarity floor for "this is the same registered person"
 
 
+class ConsentRequiredError(Exception):
+    """Raised by callers when check_consent() returns False. The pipeline
+    must stop here, before any search happens — never proceed on this face."""
+    pass
+
+
 def _load_registry():
     if not os.path.exists(REGISTRY_PATH):
         return {"members": []}
