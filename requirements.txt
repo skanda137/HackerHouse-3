@@ -1,0 +1,12 @@
+# Person A — face pipeline + search
+insightface
+opencv-python
+onnxruntime
+requests
+
+# Person B — blockchain (Python-side helper scripts, if any; contract deploy uses Hardhat/npm separately)
+web3
+python-dotenv
+
+# Shared / integration
+rich
