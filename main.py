@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 
 from face_pipeline.search import find_match, NoMatchFoundError
+from consent_gate import ConsentRequiredError
 from blockchain.verify import register_match, verify_match
 
 def run_pipeline(image_path: str) -> dict:
@@ -12,6 +13,9 @@ def run_pipeline(image_path: str) -> dict:
     print(f"[1/4] Detecting and encoding face from {image_path} ...")
     try:
         match = find_match(image_path)
+    except ConsentRequiredError:
+        print("This face is not on the consent allowlist — run register_cli.py first.")
+        sys.exit(1)
     except NoMatchFoundError:
         print("No genuine match found for this face. Exiting.")
         sys.exit(1)
