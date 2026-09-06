@@ -1,0 +1,21 @@
+{
+  "match": {
+    "image_hash": "3373719c00e9929985ca4e95fb241bbe32ff1ab594bf7de869ec2aa23c091e83",
+    "matched_post_url": "https://www.linkedin.com/posts/pal-anand_the-radar-podcast-dr-anand-pal-about-studying-activity-7253928097442324480-ZZ9o",
+    "matched_platform": "linkedin",
+    "confidence": 0.9874,
+    "timestamp": "2026-09-06T13:48:30.199808+00:00"
+  },
+  "registration": {
+    "tx_hash": "0x93687b1c5d74050a71e823540d6c7f978731b85fa3f7d5bb04edc48e45267066",
+    "block_number": 46884076,
+    "chain": "polygon_amoy",
+    "contract_address": "0xaF6F3acE84b9B7a934BacF80bf4dC2291f930203"
+  },
+  "verification": {
+    "verified": true,
+    "post_url": "https://www.linkedin.com/posts/pal-anand_the-radar-podcast-dr-anand-pal-about-studying-activity-7253928097442324480-ZZ9o",
+    "block_number": 46884076,
+    "registered_at": "2026-09-06T13:48:38+00:00"
+  }
+}

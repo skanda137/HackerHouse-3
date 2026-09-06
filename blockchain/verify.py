@@ -15,6 +15,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from web3 import Web3
+from web3.middleware import ExtraDataToPOAMiddleware
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 _BLOCKCHAIN_DIR = Path(__file__).resolve().parent
@@ -65,6 +66,7 @@ def _get_contract():
     )
 
     _w3 = Web3(Web3.HTTPProvider(rpc_url))
+    _w3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
     if not _w3.is_connected():
         raise RuntimeError(
             f"Could not connect to {network} at {rpc_url}. "
