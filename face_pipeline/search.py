@@ -5,9 +5,10 @@ enforce consent BEFORE any search, run reverse image search, re-verify
 candidates by actual face similarity, and return the best genuine match.
 """
 import hashlib
+import os
 from datetime import datetime, timezone
 
-from face_pipeline import get_embedding
+from face_pipeline import get_face, crop_to_face
 from consent_gate import check_consent, ConsentRequiredError
 from reverse_search import reverse_image_search
 from verify_match import verify_candidates
@@ -56,9 +57,10 @@ def find_match(image_path: str) -> dict:
         image_bytes = f.read()
     image_hash = hashlib.sha256(image_bytes).hexdigest()
 
-    embedding = get_embedding(image_path)
-    if embedding is None:
+    face = get_face(image_path)
+    if face is None:
         raise NoMatchFoundError(f"No face detected in {image_path}.")
+    embedding = face.embedding
 
     is_consented, member_name = check_consent(embedding)
     if not is_consented:
@@ -67,7 +69,14 @@ def find_match(image_path: str) -> dict:
             "Register it first with register_cli.py before running a search."
         )
 
-    candidates = reverse_image_search(image_path)
+    # Crop to the face bbox before searching so Lens matches on the face,
+    # not the most visually distinctive object in frame (e.g. a jacket) —
+    # see README "Known limitations".
+    cropped_path = crop_to_face(image_path, face.bbox)
+    try:
+        candidates = reverse_image_search(cropped_path)
+    finally:
+        os.remove(cropped_path)
     verified = verify_candidates(embedding, candidates)
 
     strong_matches = [c for c in verified if c["confidence"] >= MATCH_CONFIDENCE_THRESHOLD]
