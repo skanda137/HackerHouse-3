@@ -42,7 +42,7 @@ def run_pipeline(image_path: str) -> dict:
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Usage: python integration/main.py path/to/face_image.jpg")
+        print("Usage: python main.py path/to/face_image.jpg")
         sys.exit(1)
 
     output = run_pipeline(sys.argv[1])

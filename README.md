@@ -18,11 +18,13 @@ Consent is structurally enforced: `find_match()` (`face_pipeline/search.py`) cal
 and raises `ConsentRequiredError` if the face isn't on the allowlist. This has been
 verified by reading the actual function body, not assumed from a docstring.
 
-**Still incomplete**: nobody has registered yet — `registry.json` does not exist in this
-repo. Register a face with `python register_cli.py --name <you> --photo <your_own_consented_photo.jpg>`
-to create it. Once that's done, demo subjects will be team members' own faces, matched
-against their own real, publicly-known social accounts (self-consent) — that is the
-intended design, but as of now it hasn't happened, so don't present it as already true.
+One team member is registered so far (via `register_cli.py`) and the full pipeline has
+been run end-to-end against that real, consented face — `python main.py <photo>`
+correctly ran real face detection, passed the consent check, ran a real reverse image
+search, and correctly reported no match rather than a false positive (see Known
+Limitations for why). Demo subjects are team members' own faces, matched against their
+own real, publicly-known social accounts (self-consent) — for the demo recording, use a
+photo that's already posted on that account, not a fresh one (see Known Limitations).
 
 ## How to run
 
@@ -83,22 +85,22 @@ See `INTERFACE_CONTRACT.md` for the exact data shapes each module produces/consu
   prefix (older versions kept it). `blockchain/verify.py`'s `register_match()` explicitly
   strips-then-readds it — that line is a compatibility fix for this specific installed
   version, not dead or redundant code.
-- **Reverse-image-search coverage is uneven by platform.** LinkedIn in particular is a
-  known weak case: profile photos are served from `media.licdn.com` behind mechanisms
-  that resist generic scraping, and Google/Google Lens indexes very little of LinkedIn's
-  photo content tied back to profile pages. Don't expect SerpApi's Google Lens to
-  reliably surface LinkedIn matches even once fully wired up.
+- **Google Lens matches general visual similarity, not faces specifically — confirmed
+  empirically, not just theorized.** A real end-to-end run against a real registered
+  face returned candidates that were visually-similar leather jacket product listings
+  (the most visually distinctive object in the query photo), not the actual person.
+  `verify_match.py`'s re-embedding step correctly rejected all of them (similarity
+  scores of -0.05 to 0.04, nowhere near the 0.6 threshold) and `find_match()` correctly
+  raised `NoMatchFoundError` rather than reporting a false positive — but this means a
+  brand-new/private photo has little chance of surfacing a real post through this API.
+  Google Lens (and reverse image search generally) works best when the *exact query
+  image itself* is already public and indexed somewhere — for the demo, use a photo
+  that's already posted on the subject's own real social account, not a fresh one.
 - **`MATCH_CONFIDENCE_THRESHOLD` (0.6, in `face_pipeline/search.py`) is not yet validated**
   against a labeled set of known-match/known-non-match photo pairs — it's a reasonable
   starting point for ArcFace cosine similarity, not a tuned number.
-- **No demo subjects registered yet.** `registry.json` doesn't exist; nobody has run
-  `register_cli.py`. `main.py` has not been run against a real face end-to-end for this
-  reason, and also because `SEARCH_API_KEY` is not yet set in `.env`.
 - **Amoy testnet deployment is pending** — see "Which blockchain" above; only the local
   Hardhat network has been exercised for real so far.
-- **`main.py` only catches `NoMatchFoundError`**, not `ConsentRequiredError` — if
-  `find_match()` is called on a face that isn't on the consent allowlist, `main.py` will
-  currently crash with an unhandled traceback instead of a clean message.
 
 ## Team
 

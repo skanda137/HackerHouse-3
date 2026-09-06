@@ -7,6 +7,14 @@ then uses the returned image_id with Google Lens.
 
 import os
 import requests
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Loaded here (not just in blockchain/verify.py) because this module reads its
+# env var at import time, below — if main.py imports this before anything else
+# has called load_dotenv(), SEARCH_API_KEY would be cached as None permanently
+# for the process, regardless of what's in .env.
+load_dotenv(Path(__file__).resolve().parent / ".env")
 
 SERPAPI_KEY = os.environ.get("SEARCH_API_KEY")  # name matches .env/.env.example, not "SERPAPI_KEY"
 
